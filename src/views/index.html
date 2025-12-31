@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Pastebin Lite</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Pastebin Lite</h1>
+
+      <textarea id="content" placeholder="Paste your text here..."></textarea>
+
+      <div class="options">
+        <div>
+          <label>Time based expiry (seconds)</label>
+          <input type="number" id="ttl" min="1" placeholder="Optional" />
+        </div>
+
+        <div>
+          <label>Max Views</label>
+          <input type="number" id="views" min="1" placeholder="Optional" />
+        </div>
+      </div>
+
+      <button onclick="create()">Create Paste</button>
+
+      <div id="out"></div>
+    </div>
+
+    <script>
+      async function create() {
+        const content = document.getElementById("content").value;
+        const ttl = document.getElementById("ttl").value;
+        const views = document.getElementById("views").value;
+
+        const body = {
+          content,
+          ...(ttl && { ttl_seconds: Number(ttl) }),
+          ...(views && { max_views: Number(views) }),
+        };
+
+        const res = await fetch("/api/pastes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          document.getElementById(
+            "out"
+          ).innerHTML = `<div class="error">${data.error}</div>`;
+          return;
+        }
+
+        document.getElementById("out").innerHTML = `
+        <div class="result">
+          <a id="pasteLink" href="${data.url}" target="_blank">
+            ${data.url}
+          </a>
+          <br/>
+          <button class="copy-btn" onclick="copyLink()">Copy Link</button>
+        </div>
+      `;
+      }
+
+      function copyLink() {
+        const link = document.getElementById("pasteLink").href;
+        navigator.clipboard.writeText(link);
+        alert("Link copied!");
+      }
+    </script>
+  </body>
+</html>
